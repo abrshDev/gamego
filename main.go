@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"os"
 )
 
 const (
@@ -11,53 +12,87 @@ const (
 	PLAYER  = 69
 )
 
-type Game struct{}
-
-func (g *Game) update() {}
-func (g *Game) render() {
-
+type Game struct {
+	isRunning bool
+	level     *level
+	drawbuf   *bytes.Buffer
+}
+type level struct {
+	height, width int
+	data          [][]byte
 }
 
-func main() {
-	height := 15
-	width := 40
-	level := make([][]byte, height)
+func NewLevel(width, height int) *level {
+	data := make([][]byte, height)
 	for h := 0; h < height; h++ {
 		for w := 0; w < width; w++ {
-			level[h] = make([]byte, width)
+			data[h] = make([]byte, width)
 
 		}
 	}
 	for h := 0; h < height; h++ {
 		for w := 0; w < width; w++ {
 			if h == 0 {
-				level[h][w] = WALL
+				data[h][w] = WALL
 			}
 			if w == 0 {
-				level[h][w] = WALL
+				data[h][w] = WALL
 			}
 			if h == height-1 {
-				level[h][w] = WALL
+				data[h][w] = WALL
 			}
 			if w == width-1 {
-				level[h][w] = WALL
+				data[h][w] = WALL
 			}
 
 		}
 	}
-	buf := new(bytes.Buffer)
-	for h := 0; h < height; h++ {
-		for w := 0; w < width; w++ {
-			if level[h][w] == NOTHING {
-				buf.WriteString(" ")
+	return &level{
+		data: data,
+	}
+}
+func NewGame(width, height int) *Game {
+	lvl := NewLevel(width, height)
+	return &Game{
+		level:   lvl,
+		drawbuf: new(bytes.Buffer),
+	}
+}
+func (g *Game) Start() {
+	g.isRunning = true
+	g.loop()
+}
+func (g *Game) loop() {
+	for g.isRunning {
+		g.update()
+		g.render()
+	}
+}
+func (g *Game) renderarena() {
+	for h := 0; h < g.level.height; h++ {
+		for w := 0; w < g.level.width; w++ {
+			if g.level.data[h][w] == NOTHING {
+				g.drawbuf.WriteString(" ")
 			}
-			if level[h][w] == WALL {
-				buf.WriteString("#")
+			if g.level.data[h][w] == WALL {
+				g.drawbuf.WriteString("#")
 			}
 
 		}
-		buf.WriteString("\n")
+		g.drawbuf.WriteString("\n")
 	}
-	fmt.Println("level:", level)
-	fmt.Println(buf.String())
+}
+func (g *Game) update() {}
+func (g *Game) render() {
+	g.renderarena()
+	fmt.Fprint(os.Stdout, g.drawbuf.String())
+}
+
+func main() {
+	height := 15
+	width := 40
+	fmt.Println("main")
+	g := NewGame(width, height)
+	g.Start()
+
 }
