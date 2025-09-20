@@ -14,6 +14,9 @@ const (
 	MAX_SAMPLES = 100
 )
 
+type noobie struct {
+}
+
 type Stats struct {
 	start  time.Time
 	frames int
@@ -127,7 +130,7 @@ func (g *Game) render() {
 func main() {
 	height := 15
 	width := 40
-	fmt.Println("main")
+
 	g := NewGame(width, height)
 	g.Start()
 
