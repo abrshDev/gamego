@@ -10,7 +10,7 @@ import (
 const (
 	NOTHING     = 0
 	WALL        = 1
-	PLAYER      = 8
+	PLAYER      = 69
 	MAX_SAMPLES = 100
 )
 
@@ -36,10 +36,15 @@ type Game struct {
 }
 type level struct {
 	height, width int
-	data          [][]byte
+	data          [][]int
 }
 
-func (p *player) update() {}
+func (p *player) update() {
+	p.pos.x += 1
+	if p.pos.x == p.level.width {
+		p.pos.x -= 1
+	}
+}
 func NewStats() *Stats {
 	return &Stats{
 		start: time.Now(),
@@ -55,10 +60,10 @@ func (s *Stats) update() {
 	}
 }
 func NewLevel(width, height int) *level {
-	data := make([][]byte, height)
+	data := make([][]int, height)
 	for h := 0; h < height; h++ {
 		for w := 0; w < width; w++ {
-			data[h] = make([]byte, width)
+			data[h] = make([]int, width)
 
 		}
 	}
@@ -106,13 +111,14 @@ func (g *Game) Start() {
 func (g *Game) loop() {
 	for g.isRunning {
 		g.update()
-
 		g.render()
-
 		g.stats.update()
 		time.Sleep(time.Millisecond * 16) //limit fps
 
 	}
+}
+func (l *level) set(pos position, v int) {
+	l.data[pos.y][pos.x] = v
 }
 func (g *Game) renderarena() {
 	for h := 0; h < g.level.height; h++ {
@@ -120,11 +126,11 @@ func (g *Game) renderarena() {
 			if g.level.data[h][w] == NOTHING {
 				g.drawbuf.WriteString(" ")
 			}
-			if g.level.data[h][w] == WALL {
-				g.drawbuf.WriteString("#")
+			if g.level.data[h][w] == WALL { /*  ✦₊❣⋆✦ */
+				g.drawbuf.WriteString("✦")
 			}
 			if g.level.data[h][w] == PLAYER {
-				g.drawbuf.WriteString("p")
+				g.drawbuf.WriteString("✿")
 			}
 
 		}
@@ -136,7 +142,9 @@ func (g *Game) renderstats() {
 	g.drawbuf.WriteString(fmt.Sprintf("fps:%.2f\n", g.stats.fps))
 }
 func (g *Game) update() {
+	g.level.set(g.player.pos, NOTHING)
 	g.player.update()
+	g.level.set(g.player.pos, PLAYER)
 }
 func (g *Game) render() {
 	g.drawbuf.Reset()
@@ -148,7 +156,7 @@ func (g *Game) render() {
 
 }
 func (g *Game) renderplayer() {
-	g.level.data[g.player.pos.y][g.player.pos.x] = PLAYER
+	g.update()
 }
 func main() {
 	height := 15
