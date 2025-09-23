@@ -18,8 +18,9 @@ type position struct {
 	x, y int
 }
 type player struct {
-	level *level
-	pos   position
+	level   *level
+	pos     position
+	reverse bool
 }
 type Stats struct {
 	start  time.Time
@@ -40,9 +41,19 @@ type level struct {
 }
 
 func (p *player) update() {
-	p.pos.x += 1
-	if p.pos.x == p.level.width {
+	if p.reverse {
 		p.pos.x -= 1
+
+		if p.pos.x == 2 {
+			p.pos.x += 1
+			p.reverse = false
+		}
+		return
+	}
+	p.pos.x += 1
+	if p.pos.x == p.level.width-2 {
+		p.pos.x -= 1
+		p.reverse = true
 	}
 }
 func NewStats() *Stats {
@@ -117,6 +128,7 @@ func (g *Game) loop() {
 
 	}
 }
+
 func (l *level) set(pos position, v int) {
 	l.data[pos.y][pos.x] = v
 }
@@ -126,11 +138,11 @@ func (g *Game) renderarena() {
 			if g.level.data[h][w] == NOTHING {
 				g.drawbuf.WriteString(" ")
 			}
-			if g.level.data[h][w] == WALL { /*  ✦₊❣⋆✦ */
+			if g.level.data[h][w] == WALL {
 				g.drawbuf.WriteString("✦")
 			}
 			if g.level.data[h][w] == PLAYER {
-				g.drawbuf.WriteString("✿")
+				g.drawbuf.WriteString("🎮")
 			}
 
 		}
@@ -160,8 +172,7 @@ func (g *Game) renderplayer() {
 }
 func main() {
 	height := 15
-	width := 40
-
+	width := 80
 	g := NewGame(width, height)
 	g.Start()
 
