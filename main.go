@@ -47,11 +47,13 @@ type input struct {
 }
 
 func (i *input) update() {
-	i.pressedkey = 0
+	/* i.pressedkey = 0
 
-	tick := time.NewTicker(time.Millisecond * 2)
-free:
-	for {
+			tick := time.NewTicker(time.Millisecond * 2)
+
+	free: */
+
+	/* for {
 		select {
 		case <-tick.C:
 			break free
@@ -60,9 +62,10 @@ free:
 			os.Stdin.Read(b)
 			i.pressedkey = b[0]
 		}
-	}
+	} */
 
 }
+
 func (p *player) update() {
 	if p.reverse {
 		p.pos.x -= 1
