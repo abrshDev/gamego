@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"os/exec"
 	"time"
 )
 
@@ -21,6 +22,7 @@ type player struct {
 	level   *level
 	pos     position
 	reverse bool
+	input   *input
 }
 type Stats struct {
 	start  time.Time
@@ -34,12 +36,33 @@ type Game struct {
 	player    *player
 	drawbuf   *bytes.Buffer
 	stats     *Stats
+	input     *input
 }
 type level struct {
 	height, width int
 	data          [][]int
 }
+type input struct {
+	pressedkey byte
+}
 
+func (i *input) update() {
+	i.pressedkey = 0
+
+	tick := time.NewTicker(time.Millisecond * 2)
+free:
+	for {
+		select {
+		case <-tick.C:
+			break free
+		default:
+			b := make([]byte, 1)
+			os.Stdin.Read(b)
+			i.pressedkey = b[0]
+		}
+	}
+
+}
 func (p *player) update() {
 	if p.reverse {
 		p.pos.x -= 1
@@ -102,15 +125,20 @@ func NewLevel(width, height int) *level {
 	}
 }
 func NewGame(width, height int) *Game {
+	exec.Command("stty", "-F", "/dev/tty", "cbreak", "min", "1").Run()
+	exec.Command("stty", "-F", "/dev/tty", "-echo", "min", "1").Run()
 	lvl := NewLevel(width, height)
+	inp := &input{}
 	return &Game{
 		level:   lvl,
 		drawbuf: new(bytes.Buffer),
+		input:   inp,
 		player: &player{
 			level: lvl,
 			pos: position{
 				x: 8, y: 5,
 			},
+			input: inp,
 		},
 		stats: NewStats(),
 	}
@@ -121,7 +149,9 @@ func (g *Game) Start() {
 }
 func (g *Game) loop() {
 	for g.isRunning {
+		g.input.update()
 		g.update()
+
 		g.render()
 		g.stats.update()
 		time.Sleep(time.Millisecond * 16) //limit fps
@@ -152,6 +182,7 @@ func (g *Game) renderarena() {
 func (g *Game) renderstats() {
 	g.drawbuf.WriteString(" --STATS--\n")
 	g.drawbuf.WriteString(fmt.Sprintf("fps:%.2f\n", g.stats.fps))
+	g.drawbuf.WriteString(fmt.Sprintf("pressedkey:%v\n", g.input.pressedkey))
 }
 func (g *Game) update() {
 	g.level.set(g.player.pos, NOTHING)
@@ -162,14 +193,11 @@ func (g *Game) render() {
 	g.drawbuf.Reset()
 	fmt.Fprint(os.Stdout, "\033[2J\033[1;1H")
 	g.renderarena()
-	g.renderplayer()
 	g.renderstats()
 	fmt.Fprint(os.Stdout, g.drawbuf.String())
 
 }
-func (g *Game) renderplayer() {
-	g.update()
-}
+
 func main() {
 	height := 15
 	width := 80
